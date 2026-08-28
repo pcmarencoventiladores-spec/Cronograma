@@ -265,7 +265,8 @@ window.CRONOGRAMA_CONFIG = {
   body.solo-lectura #btnReset,
   body.solo-lectura #btnAbrir,
   body.solo-lectura #btnSalir,
-  body.solo-lectura #btnDescansos{display:none}
+  body.solo-lectura #btnDescansos,
+  body.solo-lectura #btnFechas{display:none}
   body.solo-lectura .bar{cursor:default}
   body.solo-lectura .editor{display:none !important}
   body.solo-lectura .sinprog{display:none}
@@ -348,6 +349,7 @@ window.CRONOGRAMA_CONFIG = {
     <div class="chips" id="chips"></div>
     <div class="spacer"></div>
     <span class="estado" id="estadoGuardado" title="Los cambios se guardan solos en este navegador">Guardado</span>
+    <button id="btnFechas">Ocultar fechas</button>
     <button id="btnDescansos">Días de descanso</button>
     <button id="btnEntrar">Entrar como editor</button>
     <button id="btnHistorial">Historial</button>
@@ -508,9 +510,11 @@ window.CRONOGRAMA_CONFIG = {
 
   /* Días que el equipo descansa: no cuentan como días de trabajo. */
   let descansos = [];
+  /* Mientras no haya fechas confirmadas se muestran solo los números de semana. */
+  let sinFechas = false;
 
-  function paquete(){ return {v:5, tareas:tareas, descansos:descansos}; }
-  function estadoJson(){ return JSON.stringify({t:tareas, d:descansos}); }
+  function paquete(){ return {v:6, tareas:tareas, descansos:descansos, sinFechas:sinFechas}; }
+  function estadoJson(){ return JSON.stringify({t:tareas, d:descansos, s:sinFechas}); }
   function normalizaDescansos(lista){
     if(!Array.isArray(lista)) return [];
     return lista.filter(function(f){ return typeof f === "string" && /^\d{4}-\d{2}-\d{2}$/.test(f); });
@@ -534,6 +538,12 @@ window.CRONOGRAMA_CONFIG = {
     let n = 0;
     for(let i = idx(a); i <= idx(b); i++){ if(!esDescanso(fromIdx(i))) n++; }
     return n;
+  }
+
+  function semanaDe(f){ return Math.floor(idx(f)/7) + 1; }
+  function etiquetaSem(a, b){
+    const s1 = semanaDe(a), s2 = semanaDe(b);
+    return s1 === s2 ? "Semana "+s1 : "Semanas "+s1+"–"+s2;
   }
 
   const TOTAL = idx(FIN)+1;
@@ -622,6 +632,7 @@ window.CRONOGRAMA_CONFIG = {
     if(fila && fila.datos && validas(fila.datos.tareas)){
       tareas = normaliza(fila.datos.tareas);
       descansos = normalizaDescansos(fila.datos.descansos);
+      sinFechas = !!fila.datos.sinFechas;
       version = fila.actualizado;
       ultimoJson = jsonGuardado = estadoJson();
       return true;
@@ -726,7 +737,7 @@ window.CRONOGRAMA_CONFIG = {
       const crudo = localStorage.getItem(LLAVE);
       if(crudo){
         const dl = JSON.parse(crudo);
-        if(validas(dl.tareas)){ tareas = normaliza(dl.tareas); descansos = normalizaDescansos(dl.descansos); }
+        if(validas(dl.tareas)){ tareas = normaliza(dl.tareas); descansos = normalizaDescansos(dl.descansos); sinFechas = !!dl.sinFechas; }
       }
     }catch(err){}
     ultimoJson = jsonGuardado = estadoJson();
@@ -823,7 +834,8 @@ window.CRONOGRAMA_CONFIG = {
 
     /* --- cabecera --- */
     let h = '<div class="row head"><div class="name">Actividad</div><div class="hstack" style="width:'+ancho+'px">';
-    // meses
+    // meses (se ocultan mientras no haya fechas definidas)
+    if(!sinFechas){
     h += '<div class="hrow">';
     let m=-1, acc=0, ini=0;
     for(let i=0;i<TOTAL;i++){
@@ -835,11 +847,13 @@ window.CRONOGRAMA_CONFIG = {
       }
     }
     h += '<div class="hcell mes" style="width:'+((TOTAL-ini)*dw)+'px">'+((TOTAL-ini)*dw>=46?MESES[m]:"")+'</div></div>';
+    }
     // semanas
     h += '<div class="hrow">';
-    sems.forEach(function(s){
+    sems.forEach(function(s, n){
       const w = Math.min(7,TOTAL-s.i)*dw;
-      h += '<div class="hcell" style="width:'+w+'px">'+corta(s.ini)+' – '+corta(s.fin)+'</div>';
+      const txt = sinFechas ? "Semana "+(n+1) : corta(s.ini)+' – '+corta(s.fin);
+      h += '<div class="hcell'+(sinFechas?" mes":"")+'" style="width:'+w+'px">'+txt+'</div>';
     });
     h += '</div>';
     // días
@@ -848,7 +862,7 @@ window.CRONOGRAMA_CONFIG = {
       for(let i=0;i<TOTAL;i++){
         const f=fromIdx(i), w=dow(f);
         h += '<div class="hcell dia'+(esDescanso(f)?" dom":"")+'" style="width:'+dw+'px">'+
-             DIAC[w]+'<br>'+new Date(d(f)).getUTCDate()+'</div>';
+             DIAC[w]+(sinFechas ? '' : '<br>'+new Date(d(f)).getUTCDate())+'</div>';
       }
       h += '</div>';
     }
@@ -882,7 +896,8 @@ window.CRONOGRAMA_CONFIG = {
     let filas = "";
     lista.forEach(function(t,pos){
       const r = rango(t);
-      const metaTxt = r ? corta(r.ini)+" – "+corta(r.fin) : "por programar";
+      const metaTxt = r ? (sinFechas ? etiquetaSem(r.ini, r.fin) : corta(r.ini)+" – "+corta(r.fin))
+                        : "por programar";
       const est = estadoDe(t);
       filas += '<div class="row'+(visible(t)?"":" oculta")+(t.oculta?" oculta-cli":"")+'" data-id="'+t.id+'">'+
         '<div class="name">'+
@@ -912,8 +927,8 @@ window.CRONOGRAMA_CONFIG = {
         const sel = (estado.sel && estado.sel.id===t.id) ? " sel" : "";
         const clase = (segHecho ? " hecho" : "");
         filas += '<div class="bar cat-'+t.cat+sel+clase+'" data-id="'+t.id+'" data-seg="'+si+'" '+
-                 'title="'+larga(s.ini)+' a '+larga(s.fin)+' · '+dias+' días de trabajo · '+
-                 'avance '+av+' de '+dias+' días" '+
+                 'title="'+(sinFechas ? etiquetaSem(s.ini,s.fin) : larga(s.ini)+' a '+larga(s.fin))+
+                 ' · '+dias+' días de trabajo · avance '+av+' de '+dias+' días" '+
                  'style="left:'+left+'px;width:'+w+'px">'+
                    '<div class="prog" style="width:'+pct+'%"></div>'+
                    '<div class="h l"></div>'+
@@ -926,7 +941,7 @@ window.CRONOGRAMA_CONFIG = {
           filas += '<div class="lblout" style="left:'+x+'px">'+texto+'</div>';
         }
       });
-      if(estado.verHoy && HOYI>=0 && HOYI<TOTAL){
+      if(estado.verHoy && !sinFechas && HOYI>=0 && HOYI<TOTAL){
         filas += '<div class="hoy'+(pos===0?" first":"")+'" style="left:'+(HOYI*dw+dw/2)+'px"></div>';
       }
       filas += '</div></div>';
@@ -968,13 +983,17 @@ window.CRONOGRAMA_CONFIG = {
     const sem = ini&&fin ? Math.ceil((idx(fin)-idx(ini)+1)/7) : 0;
     const html =
       kpi("Actividades", mias.length) +
-      kpi("Inicio", ini?corta(ini):"—") +
-      kpi("Término", fin?corta(fin):"—") +
+      kpi("Inicio", ini ? (sinFechas ? "Semana "+semanaDe(ini) : corta(ini)) : "—") +
+      kpi("Término", fin ? (sinFechas ? "Semana "+semanaDe(fin) : corta(fin)) : "—") +
       kpi("Semanas", sem) +
       kpi("Días · trabajo", dias) +
       kpi("Acabadas", hechas+" / "+mias.length) +
       kpi("Avance", avSum+" / "+dias+" d");
     document.getElementById("kpis").innerHTML = html;
+    const sub = document.querySelector(".sub");
+    if(sub) sub.textContent = sinFechas
+      ? "Instalación del sistema de coolpads · TEGRA · 10 semanas · fechas por definir"
+      : "Instalación del sistema de coolpads · TEGRA · 10 semanas: 31 de agosto – 8 de noviembre de 2026";
   }
   function kpi(k,v){ return '<div class="kpi"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
 
@@ -1347,6 +1366,19 @@ window.CRONOGRAMA_CONFIG = {
     pintarDescansos();
     render();
   }
+  const btnFechas = document.getElementById("btnFechas");
+  function pintarBotonFechas(){
+    btnFechas.textContent = sinFechas ? "Mostrar fechas" : "Ocultar fechas";
+    btnFechas.classList.toggle("on", sinFechas);
+    btnFechas.classList.add("ghost");
+  }
+  btnFechas.addEventListener("click", function(){
+    sinFechas = !sinFechas;
+    pintarBotonFechas();
+    render();
+  });
+  pintarBotonFechas();
+
   document.getElementById("btnDescansos").addEventListener("click", function(){
     paneld.classList.toggle("open");
     if(paneld.classList.contains("open")){ cerrarEditor(); pintarDescansos(); }
