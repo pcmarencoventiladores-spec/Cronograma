@@ -325,7 +325,7 @@ window.CRONOGRAMA_CONFIG = {
   <header class="top">
     <div>
       <h1>Cronograma Tegra</h1>
-      <div class="sub">Instalación del sistema de coolpads · TEGRA · 10 semanas: 31 de agosto – 8 de noviembre de 2026</div>
+      <div class="sub">Instalación del sistema de coolpads · TEGRA · 10 semanas: 7 de septiembre – 15 de noviembre de 2026</div>
     </div>
     <div class="kpis" id="kpis"></div>
   </header>
@@ -460,8 +460,8 @@ window.CRONOGRAMA_CONFIG = {
   "use strict";
 
   /* ================= datos ================= */
-  const INICIO = "2026-08-31";     // lunes, semana 1
-  const FIN    = "2026-11-08";     // domingo, semana 10
+  const INICIO = "2026-09-07";     // lunes, semana 1
+  const FIN    = "2026-11-15";     // domingo, semana 10
   const HOY    = (function(){      // fecha real del equipo
     const n = new Date();
     return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0");
@@ -478,20 +478,20 @@ window.CRONOGRAMA_CONFIG = {
   };
 
   let tareas = [
-    {n:"Desmontar 4 equipos GLF pared Oeste",                        c:"desmontaje",   s:[["2026-08-31","2026-09-02"]]},
-    {n:"Desmontar 4 equipos oscilantes",                             c:"desmontaje",   s:[["2026-09-03","2026-09-05"]]},
-    {n:"Instalación eléctrica para 8 ventiladores pared Norte",      c:"electrico",    s:[["2026-09-07","2026-09-12"]]},
-    {n:"Instalar 8 equipos en pared Este, lado Sur",                 c:"montaje",      s:[["2026-09-14","2026-09-19"]]},
-    {n:"Armar 4 coolpads",                                           c:"coolpads",     s:[["2026-09-07","2026-09-08"]]},
-    {n:"Construcción de base para tanques de retorno",               c:"obra",         s:[["2026-09-07","2026-09-19"]]},
-    {n:"Instalación 4 coolpads",                                     c:"coolpads",     s:[["2026-09-14","2026-09-17"]]},
-    {n:"Instalación tubería 4 pads y tanques de retorno",            c:"coolpads",     s:[["2026-09-21","2026-09-23"]]},
-    {n:"Fabricación tramos de cortina primera etapa",                c:"cortinas",     s:[["2026-09-21","2026-09-26"]]},
-    {n:"Instalación 1a etapa de cortinas",                           c:"cortinas",     s:[["2026-09-28","2026-10-03"]]},
-    {n:"Desmontar 9 equipos pared Sur",                              c:"desmontaje",   s:[["2026-10-05","2026-10-14"]]},
-    {n:"Desmontar 5 equipos oscilantes restantes",                   c:"desmontaje",   s:[["2026-10-19","2026-10-24"]]},
-    {n:"Instalación eléctrica para 9 ventiladores pared Norte",      c:"electrico",    s:[["2026-10-19","2026-10-28"]]},
-    {n:"Instalar 9 equipos en pared Este, lado centro",              c:"montaje",      s:[["2026-10-28","2026-11-06"]]},
+    {n:"Desmontar 4 equipos GLF pared Oeste",                        c:"desmontaje",   s:[["2026-09-07","2026-09-09"]]},
+    {n:"Desmontar 4 equipos oscilantes",                             c:"desmontaje",   s:[["2026-09-10","2026-09-12"]]},
+    {n:"Instalación eléctrica para 8 ventiladores pared Norte",      c:"electrico",    s:[["2026-09-14","2026-09-19"]]},
+    {n:"Instalar 8 equipos en pared Este, lado Sur",                 c:"montaje",      s:[["2026-09-21","2026-09-26"]]},
+    {n:"Armar 4 coolpads",                                           c:"coolpads",     s:[["2026-09-14","2026-09-15"]]},
+    {n:"Construcción de base para tanques de retorno",               c:"obra",         s:[["2026-09-14","2026-09-26"]]},
+    {n:"Instalación 4 coolpads",                                     c:"coolpads",     s:[["2026-09-21","2026-09-24"]]},
+    {n:"Instalación tubería 4 pads y tanques de retorno",            c:"coolpads",     s:[["2026-09-28","2026-09-30"]]},
+    {n:"Fabricación tramos de cortina primera etapa",                c:"cortinas",     s:[["2026-09-28","2026-10-03"]]},
+    {n:"Instalación 1a etapa de cortinas",                           c:"cortinas",     s:[["2026-10-05","2026-10-10"]]},
+    {n:"Desmontar 9 equipos pared Sur",                              c:"desmontaje",   s:[["2026-10-12","2026-10-21"]]},
+    {n:"Desmontar 5 equipos oscilantes restantes",                   c:"desmontaje",   s:[["2026-10-26","2026-10-31"]]},
+    {n:"Instalación eléctrica para 9 ventiladores pared Norte",      c:"electrico",    s:[["2026-10-26","2026-11-04"]]},
+    {n:"Instalar 9 equipos en pared Este, lado centro",              c:"montaje",      s:[["2026-11-04","2026-11-13"]]},
     {n:"Armar 4 coolpads (segunda etapa)",                           c:"coolpads",     s:[]},
     {n:"Instalación 4 coolpads (segunda etapa)",                     c:"coolpads",     s:[]},
     {n:"Instalación tubería 4 pads (segunda etapa)",                 c:"coolpads",     s:[]},
@@ -993,7 +993,7 @@ window.CRONOGRAMA_CONFIG = {
     const sub = document.querySelector(".sub");
     if(sub) sub.textContent = sinFechas
       ? "Instalación del sistema de coolpads · TEGRA · 10 semanas · fechas por definir"
-      : "Instalación del sistema de coolpads · TEGRA · 10 semanas: 31 de agosto – 8 de noviembre de 2026";
+      : "Instalación del sistema de coolpads · TEGRA · 10 semanas: 7 de septiembre – 15 de noviembre de 2026";
   }
   function kpi(k,v){ return '<div class="kpi"><div class="k">'+k+'</div><div class="v">'+v+'</div></div>'; }
 
