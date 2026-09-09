@@ -162,6 +162,18 @@ window.CRONOGRAMA_CONFIG = {
   .row.oculta-cli .ojo{color:#c0392b}
   .est-nover{background:#f4f6f8;color:#6b7480;border:1px dashed #c3cbd4}
 
+  /* ---------- equipos responsables ---------- */
+  .eq{font-size:10px;font-weight:700;letter-spacing:.02em;border-radius:999px;padding:2px 8px;
+      white-space:nowrap;border:1.5px dashed currentColor;background:#fff}
+  .bar.coneq{outline:2px dashed var(--eq);outline-offset:-2px}
+  .bar.sel{outline:2.5px solid #16191d;outline-offset:1px}
+  .listaeq{display:flex;flex-direction:column;gap:6px;margin-bottom:10px}
+  .eqfila{display:flex;align-items:center;gap:7px}
+  .eqfila input[type=text]{flex:1;font-size:12.5px;padding:4px 8px;min-width:0}
+  .eqcolor{width:26px;height:26px;border-radius:7px;border:1px solid var(--line);padding:0;cursor:pointer;flex:none}
+  .eqfila .quitar{border:0;background:none;color:var(--ink-3);cursor:pointer;font-size:13px;padding:2px 5px}
+  .eqfila .quitar:hover{color:#c92a2a}
+
   /* ---------- pestañas ---------- */
   .pestanas{display:flex;gap:6px;margin-bottom:14px}
   .pestana{background:none;border:1px solid transparent;border-radius:9px;padding:7px 16px;
@@ -204,6 +216,30 @@ window.CRONOGRAMA_CONFIG = {
   .bit-form textarea:focus{outline:2px solid #b9d0f7}
   .bit-form .fila{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
   .bit-form .acciones{display:flex;gap:8px;margin-top:14px}
+  .bit-filtros{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .bit-filtros label{font-size:12px;color:var(--ink-2)}
+  .bit-filtros select{font-size:13px;padding:5px 9px;max-width:210px}
+  .bit-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 9px}
+  .bit-chip{font-size:11px;font-weight:650;border-radius:999px;padding:3px 9px;color:#fff}
+  .bit-chip.eq{background:#fff;border:1.5px dashed currentColor;font-weight:700}
+  .bit-sel{border:1px solid var(--line);border-radius:10px;max-height:190px;overflow-y:auto;
+           padding:6px;margin:0 0 12px;display:none;background:#fbfcfd}
+  .bit-sel.open{display:block}
+  .bit-sel label{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--ink);
+                 text-transform:none;letter-spacing:0;padding:4px 6px;border-radius:7px;cursor:pointer;margin:0}
+  .bit-sel label:hover{background:#eef2f7}
+  .bit-sel input{margin:2px 0 0;width:auto;flex:none}
+  .bit-sel .pt{width:9px;height:9px;border-radius:50%;flex:none;margin-top:4px}
+  .bit-video video{width:200px;height:130px;border-radius:9px;border:1px solid var(--line);background:#000;display:block}
+  .bit-foto.video{width:200px}
+  .bit-dia.resaltada{outline:2px solid var(--accent);outline-offset:2px}
+  .edbit{border-top:1px solid var(--line-2);margin-top:12px;padding-top:10px}
+  .edbit h4{margin:0 0 6px;font-size:11px;color:var(--ink-3);text-transform:uppercase;letter-spacing:.05em}
+  .edbit .item{font-size:12.5px;padding:5px 8px;border:1px solid var(--line);border-radius:8px;
+               margin-bottom:5px;cursor:pointer;background:#fbfcfd}
+  .edbit .item:hover{background:#eef2f7}
+  .edbit .item b{font-weight:650}
+  .edbit .nada{font-size:12px;color:var(--ink-3)}
   .bit-lupa{position:fixed;inset:0;background:rgba(16,19,23,.88);z-index:90;display:none;
             align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
   .bit-lupa.open{display:flex}
@@ -315,7 +351,8 @@ window.CRONOGRAMA_CONFIG = {
   body.solo-lectura #btnAbrir,
   body.solo-lectura #btnSalir,
   body.solo-lectura #btnDescansos,
-  body.solo-lectura #btnFechas{display:none}
+  body.solo-lectura #btnFechas,
+  body.solo-lectura #btnEquipos{display:none}
   body.solo-lectura .bar{cursor:default}
   body.solo-lectura .editor{display:none !important}
   body.solo-lectura .sinprog{display:none}
@@ -405,6 +442,7 @@ window.CRONOGRAMA_CONFIG = {
     <div class="spacer"></div>
     <span class="estado" id="estadoGuardado" title="Los cambios se guardan solos en este navegador">Guardado</span>
     <button id="btnFechas">Ocultar fechas</button>
+    <button id="btnEquipos">Equipos responsables</button>
     <button id="btnDescansos">Días de descanso</button>
     <button id="btnEntrar">Entrar como editor</button>
     <button id="btnHistorial">Historial</button>
@@ -435,6 +473,16 @@ window.CRONOGRAMA_CONFIG = {
       <span class="bit-aviso" id="bitAviso"></span>
     </div>
 
+    <div class="bit-filtros">
+      <label for="fResp">Responsable</label>
+      <select id="fResp"><option value="">Todos</option></select>
+      <label for="fEquipo">Equipo</label>
+      <select id="fEquipo"><option value="">Todos</option></select>
+      <label for="fTipo">Tipo de actividad</label>
+      <select id="fTipo"><option value="">Todos</option></select>
+      <button id="fLimpiar">Limpiar</button>
+    </div>
+
     <div class="bit-form" id="bitForm">
       <h3 id="bitTitulo">Registrar día</h3>
       <div class="fila">
@@ -450,8 +498,12 @@ window.CRONOGRAMA_CONFIG = {
       <label for="bitNota">Qué se hizo</label>
       <textarea id="bitNota" placeholder="Ejemplo: se desmontaron 4 equipos de la pared Oeste; zona franca tapó los boquetes."></textarea>
       <div class="fila" style="margin-top:12px">
-        <button id="bitAgregarFotos">Agregar fotos</button>
-        <input type="file" id="bitArchivos" accept="image/*" multiple hidden>
+        <button id="bitActividades">Actividades relacionadas</button>
+      </div>
+      <div class="bit-sel" id="bitSelAct"></div>
+      <div class="fila">
+        <button id="bitAgregarFotos">Agregar fotos o video</button>
+        <input type="file" id="bitArchivos" accept="image/*,video/*" multiple hidden>
       </div>
       <div class="bit-fotos" id="bitPendientes"></div>
       <div class="bit-fotos" id="bitFotosForm" style="margin-top:8px"></div>
@@ -480,9 +532,15 @@ window.CRONOGRAMA_CONFIG = {
     <label>Nombre</label>
     <input type="text" id="edNombre">
   </div>
-  <div class="fld">
-    <label>Categoría</label>
-    <select id="edCat"></select>
+  <div class="two">
+    <div class="fld">
+      <label>Categoría</label>
+      <select id="edCat"></select>
+    </div>
+    <div class="fld">
+      <label>Responsable</label>
+      <select id="edEquipo"></select>
+    </div>
   </div>
   <div class="fld">
     <label>Periodos y avance de cada uno</label>
@@ -495,11 +553,24 @@ window.CRONOGRAMA_CONFIG = {
       Ocultarla en el modo lectura (el cliente no la ve)
     </label>
   </div>
+  <div class="edbit">
+    <h4>Bitácora de esta actividad</h4>
+    <div id="edBitacora"><span class="nada">Sin registros todavía.</span></div>
+  </div>
   <div class="acciones">
     <button class="primary" id="edCerrar">Listo</button>
   </div>
   <div class="nota">Duración total: <span id="edDur">—</span> días de trabajo ·
   avanzados: <span id="edAv">0</span>. El avance se anota en días trabajados de cada periodo.</div>
+</div>
+
+<div class="paneld" id="panelEq">
+  <h3>Equipos responsables</h3>
+  <div class="exp">Se muestran como etiqueta punteada junto a cada actividad, para no confundirse
+  con el color del tipo de trabajo. El cliente los ve, pero no puede cambiarlos.</div>
+  <div class="listaeq" id="listaEq"></div>
+  <div class="acc"><button id="eqAgregar">+ Agregar equipo</button></div>
+  <div class="acciones"><button class="primary" id="eqCerrar">Listo</button></div>
 </div>
 
 <div class="paneld" id="paneld">
@@ -608,9 +679,23 @@ window.CRONOGRAMA_CONFIG = {
   let descansos = [];
   /* Mientras no haya fechas confirmadas se muestran solo los números de semana. */
   let sinFechas = false;
+  /* Equipos responsables: etiqueta punteada en cada actividad. */
+  let equipos = [];
+  const COLORES_EQ = ["#1f5fd0","#c2255c","#2b8a3e","#e8590c","#6741d9","#0b7285","#a5741a","#495057"];
 
-  function paquete(){ return {v:6, tareas:tareas, descansos:descansos, sinFechas:sinFechas}; }
-  function estadoJson(){ return JSON.stringify({t:tareas, d:descansos, s:sinFechas}); }
+  function paquete(){ return {v:7, tareas:tareas, descansos:descansos, sinFechas:sinFechas, equipos:equipos}; }
+  function estadoJson(){ return JSON.stringify({t:tareas, d:descansos, s:sinFechas, e:equipos}); }
+  function normalizaEquipos(lista){
+    if(!Array.isArray(lista)) return [];
+    return lista.filter(function(e){ return e && e.nombre; }).map(function(e,i){
+      return {id: e.id || ("eq"+(i+1)), nombre: String(e.nombre).slice(0,40),
+              color: /^#[0-9a-fA-F]{6}$/.test(e.color||"") ? e.color : COLORES_EQ[i % COLORES_EQ.length]};
+    });
+  }
+  function equipoDe(t){
+    if(!t.equipo) return null;
+    return equipos.filter(function(e){ return e.id === t.equipo; })[0] || null;
+  }
   function normalizaDescansos(lista){
     if(!Array.isArray(lista)) return [];
     return lista.filter(function(f){ return typeof f === "string" && /^\d{4}-\d{2}-\d{2}$/.test(f); });
@@ -701,6 +786,7 @@ window.CRONOGRAMA_CONFIG = {
         nombre: String(t.nombre),
         cat: CATS[t.cat] ? t.cat : "montaje",
         oculta: !!t.oculta,
+        equipo: t.equipo || null,
         segs: repartir(t)
       };
     });
@@ -729,6 +815,7 @@ window.CRONOGRAMA_CONFIG = {
       tareas = normaliza(fila.datos.tareas);
       descansos = normalizaDescansos(fila.datos.descansos);
       sinFechas = !!fila.datos.sinFechas;
+      equipos = normalizaEquipos(fila.datos.equipos);
       version = fila.actualizado;
       ultimoJson = jsonGuardado = estadoJson();
       return true;
@@ -833,7 +920,7 @@ window.CRONOGRAMA_CONFIG = {
       const crudo = localStorage.getItem(LLAVE);
       if(crudo){
         const dl = JSON.parse(crudo);
-        if(validas(dl.tareas)){ tareas = normaliza(dl.tareas); descansos = normalizaDescansos(dl.descansos); sinFechas = !!dl.sinFechas; }
+        if(validas(dl.tareas)){ tareas = normaliza(dl.tareas); descansos = normalizaDescansos(dl.descansos); sinFechas = !!dl.sinFechas; equipos = normalizaEquipos(dl.equipos); }
       }
     }catch(err){}
     ultimoJson = jsonGuardado = estadoJson();
@@ -995,12 +1082,14 @@ window.CRONOGRAMA_CONFIG = {
       const metaTxt = r ? (sinFechas ? etiquetaSem(r.ini, r.fin) : corta(r.ini)+" – "+corta(r.fin))
                         : "por programar";
       const est = estadoDe(t);
+      const eq = equipoDe(t);
       filas += '<div class="row'+(visible(t)?"":" oculta")+(t.oculta?" oculta-cli":"")+'" data-id="'+t.id+'">'+
         '<div class="name">'+
           '<span class="num">'+(pos+1)+'</span>'+
           '<span class="txt" contenteditable="'+((soloLectura||mirando)?"false":"true")+'" spellcheck="false" data-id="'+t.id+'"></span>'+
           '<span class="meta">'+metaTxt+'</span>'+
           '<span class="est est-'+(t.oculta?"nover":est.k)+'">'+(t.oculta?"No la ve el cliente":est.txt)+'</span>'+
+          (eq ? '<span class="eq" style="color:'+eq.color+'">'+eq.nombre+'</span>' : '')+
           '<button class="ojo" data-id="'+t.id+'" title="'+(t.oculta?"Mostrar al cliente":"Ocultar al cliente")+'">'+
             (t.oculta ? OJO_NO : OJO_SI)+'</button>'+
         '</div>'+
@@ -1021,11 +1110,11 @@ window.CRONOGRAMA_CONFIG = {
         const anchoTexto = texto.length*6.4+16;
         const dentro = w >= anchoTexto;
         const sel = (estado.sel && estado.sel.id===t.id) ? " sel" : "";
-        const clase = (segHecho ? " hecho" : "");
+        const clase = (segHecho ? " hecho" : "") + (eq ? " coneq" : "");
         filas += '<div class="bar cat-'+t.cat+sel+clase+'" data-id="'+t.id+'" data-seg="'+si+'" '+
                  'title="'+(sinFechas ? etiquetaSem(s.ini,s.fin) : larga(s.ini)+' a '+larga(s.fin))+
                  ' · '+dias+' días de trabajo · avance '+av+' de '+dias+' días" '+
-                 'style="left:'+left+'px;width:'+w+'px">'+
+                 'style="left:'+left+'px;width:'+w+'px'+(eq?';--eq:'+eq.color:'')+'">'+
                    '<div class="prog" style="width:'+pct+'%"></div>'+
                    '<div class="h l"></div>'+
                    '<span class="lbl">'+(dentro?texto:"")+'</span>'+
@@ -1364,6 +1453,7 @@ window.CRONOGRAMA_CONFIG = {
     edNombre.value = t.nombre;
     edCat.value = t.cat;
     document.getElementById("edOculta").checked = !!t.oculta;
+    pintarSelectorEquipo();
     edSegs.innerHTML = t.segs.map(function(s,i){
       const d = diasSeg(s);
       return '<div class="segline" data-i="'+i+'">'+
@@ -1378,6 +1468,29 @@ window.CRONOGRAMA_CONFIG = {
     }).join("") || '<div class="nota" style="margin:0">Sin fechas programadas.</div>';
     edDur.textContent = duracion(t);
     document.getElementById("edAv").textContent = avanceDe(t);
+    pintarBitacoraDeActividad(t);
+  }
+
+  /* Los días de bitácora que mencionan esta actividad (solo para leerlos). */
+  function pintarBitacoraDeActividad(t){
+    const caja = document.getElementById("edBitacora");
+    if(!caja) return;
+    let lista = [];
+    try{
+      lista = dias.filter(function(x){
+        return (x.actividades || []).map(Number).indexOf(t.id) >= 0;
+      });
+    }catch(err){ lista = []; }
+    if(!lista.length){
+      caja.innerHTML = '<span class="nada">Sin registros todavía.</span>';
+      return;
+    }
+    caja.innerHTML = lista.slice(0, 12).map(function(x){
+      const resumen = (x.nota || "").replace(/\s+/g, " ").slice(0, 70);
+      return '<div class="item" data-dia="'+x.id+'"><b>'+corta(x.fecha)+'</b> · '+
+             limpio(x.autor || "sin nombre")+
+             (resumen ? '<br>'+limpio(resumen)+((x.nota||"").length > 70 ? '…' : '') : '')+'</div>';
+    }).join("");
   }
   function cerrarEditor(){ cerrarCal(); editor.classList.remove("open"); estado.sel=null; render(); }
 
@@ -1424,6 +1537,13 @@ window.CRONOGRAMA_CONFIG = {
     const a = Math.min(base, TOTAL-1), b = Math.min(a+2, TOTAL-1);
     estado.sel.segs.push({ini:fromIdx(a), fin:fromIdx(b), avance:0});
     abrirEditor(estado.sel.id); render();
+  });
+  document.getElementById("edBitacora").addEventListener("click", function(e){
+    const item = e.target.closest(".item");
+    if(!item) return;
+    const id = isNaN(+item.dataset.dia) ? item.dataset.dia : +item.dataset.dia;
+    cerrarEditor();
+    if(window.__verDiaBitacora) window.__verDiaBitacora(id);
   });
   document.getElementById("edCerrar").addEventListener("click", cerrarEditor);
   document.addEventListener("keydown", function(e){
@@ -1725,6 +1845,8 @@ window.CRONOGRAMA_CONFIG = {
   let dias = [];              // [{id, fecha, nota, autor, creado, actualizado, editado_por, fotos:n}]
   let fotosDe = {};           // id de día → [{id, imagen, titulo, autor}]
   let diaEditando = null;     // objeto en edición
+  let actSel = [];            // actividades marcadas en el formulario
+  const filtros = {resp:"", equipo:"", tipo:""};
   let fotosNuevas = [];       // fotos aún no guardadas {imagen, titulo}
   let vista = "cronograma";
 
@@ -1743,6 +1865,34 @@ window.CRONOGRAMA_CONFIG = {
     return f.getDate()+" "+MESC[f.getMonth()]+" "+String(f.getHours()).padStart(2,"0")+":"+
            String(f.getMinutes()).padStart(2,"0");
   }
+  function actividadesDe(x){
+    return (x.actividades || []).map(function(id){ return porId(+id); })
+                                .filter(function(t){ return !!t; });
+  }
+  function pasaFiltros(x){
+    if(filtros.resp && (x.autor || "sin nombre") !== filtros.resp) return false;
+    const acts = actividadesDe(x);
+    if(filtros.tipo && !acts.some(function(t){ return t.cat === filtros.tipo; })) return false;
+    if(filtros.equipo && !acts.some(function(t){ return t.equipo === filtros.equipo; })) return false;
+    return true;
+  }
+  function pintarFiltros(){
+    const resp = [];
+    dias.forEach(function(x){
+      const a = x.autor || "sin nombre";
+      if(resp.indexOf(a) < 0) resp.push(a);
+    });
+    const sel = function(id, opciones, valor){
+      const e = document.getElementById(id);
+      e.innerHTML = '<option value="">Todos</option>' + opciones.map(function(o){
+        return '<option value="'+o.v+'"'+(o.v===valor?' selected':'')+'>'+limpio(o.t)+'</option>';
+      }).join("");
+    };
+    sel("fResp", resp.sort().map(function(a){ return {v:a, t:a}; }), filtros.resp);
+    sel("fEquipo", equipos.map(function(e){ return {v:e.id, t:e.nombre}; }), filtros.equipo);
+    sel("fTipo", Object.keys(CATS).map(function(k){ return {v:k, t:CATS[k].nombre}; }), filtros.tipo);
+  }
+
   function limpio(txt){
     return String(txt||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
   }
@@ -1761,7 +1911,7 @@ window.CRONOGRAMA_CONFIG = {
   /* ---------- traer los días ---------- */
   function cargarBitacora(){
     if(!hayNube()){ cargarBitLocal(); pintarBitacora(); return Promise.resolve(); }
-    return sbFetch("bitacora?select=id,fecha,nota,autor,creado,actualizado,editado_por&order=fecha.desc,id.desc&limit=300")
+    return sbFetch("bitacora?select=id,fecha,nota,autor,creado,actualizado,editado_por,actividades&order=fecha.desc,id.desc&limit=300")
       .then(function(filas){
         dias = filas || [];
         return sbFetch("bitacora_fotos?select=id,dia&limit=3000");
@@ -1779,7 +1929,7 @@ window.CRONOGRAMA_CONFIG = {
   function cargarFotos(id){
     if(!hayNube()) return Promise.resolve(fotosDe[id] || []);
     if(fotosDe[id]) return Promise.resolve(fotosDe[id]);
-    return sbFetch("bitacora_fotos?dia=eq."+id+"&select=id,imagen,titulo,autor&order=id")
+    return sbFetch("bitacora_fotos?dia=eq."+id+"&select=id,imagen,titulo,autor,tipo&order=id")
       .then(function(f){ fotosDe[id] = f || []; return fotosDe[id]; })
       .catch(function(){ return []; });
   }
@@ -1820,6 +1970,9 @@ window.CRONOGRAMA_CONFIG = {
     const cont = document.getElementById("bitLista");
     document.getElementById("bitNuevo").style.display = puedeEditar() ? "" : "none";
 
+    pintarFiltros();
+    const vistos = dias.filter(pasaFiltros);
+
     if(!dias.length){
       cont.innerHTML = '<div class="bit-vacio">Todavía no hay días registrados.' +
         (puedeEditar() ? ' Usa «Registrar día» para anotar lo que se hizo hoy.' : '') + '</div>';
@@ -1827,9 +1980,16 @@ window.CRONOGRAMA_CONFIG = {
       return;
     }
     document.getElementById("bitResumen").textContent =
-      dias.length + (dias.length === 1 ? " día registrado" : " días registrados");
+      vistos.length === dias.length
+        ? dias.length + (dias.length === 1 ? " día registrado" : " días registrados")
+        : vistos.length + " de " + dias.length + " días";
 
-    cont.innerHTML = dias.map(function(x){
+    if(!vistos.length){
+      cont.innerHTML = '<div class="bit-vacio">Ningún día coincide con el filtro.</div>';
+      return;
+    }
+
+    cont.innerHTML = vistos.map(function(x){
       const nFotos = x.fotos || (fotosDe[x.id] ? fotosDe[x.id].length : 0);
       return '<article class="bit-dia" data-id="'+x.id+'">'+
         '<header>'+
@@ -1846,6 +2006,15 @@ window.CRONOGRAMA_CONFIG = {
               '<button class="bit-borrar danger">Borrar</button></div>'
             : '')+
         '</header>'+
+        (function(){
+          const acts = actividadesDe(x);
+          if(!acts.length) return "";
+          return '<div class="bit-chips">' + acts.map(function(t){
+            const eq = equipoDe(t);
+            return '<span class="bit-chip" style="background:'+CATS[t.cat].color+'">'+limpio(t.nombre)+'</span>'+
+                   (eq ? '<span class="bit-chip eq" style="color:'+eq.color+'">'+limpio(eq.nombre)+'</span>' : '');
+          }).join("") + '</div>';
+        })()+
         (x.nota ? '<p class="bit-nota">'+limpio(x.nota)+'</p>' : '')+
         (nFotos ? '<div class="bit-fotos" data-cargar="'+x.id+'">'+
                     '<button class="bit-vermas">Ver '+nFotos+(nFotos===1?' foto':' fotos')+'</button>'+
@@ -1855,20 +2024,25 @@ window.CRONOGRAMA_CONFIG = {
     }).join("");
   }
 
+  function esVideo(f){ return f.tipo === "video" || /^data:video\//.test(f.imagen || ""); }
   function pintarFotos(cont, id){
     const fotos = fotosDe[id] || [];
     cont.innerHTML = fotos.map(function(f){
-      return '<figure class="bit-foto" data-id="'+f.id+'">'+
-        '<img src="'+f.imagen+'" alt="'+limpio(f.titulo||"foto")+'" loading="lazy">'+
+      const cuerpo = esVideo(f)
+        ? '<video src="'+f.imagen+'" controls preload="metadata"></video>'
+        : '<img src="'+f.imagen+'" alt="'+limpio(f.titulo||"foto")+'" loading="lazy">';
+      return '<figure class="bit-foto'+(esVideo(f)?" video bit-video":"")+'" data-id="'+f.id+'">'+cuerpo+
         (f.titulo ? '<figcaption>'+limpio(f.titulo)+'</figcaption>' : '')+
       '</figure>';
-    }).join("") || '<div class="bit-vacio">Sin fotos.</div>';
+    }).join("") || '<div class="bit-vacio">Sin fotos ni videos.</div>';
   }
 
   /* ---------- formulario ---------- */
   function abrirFormulario(x){
-    diaEditando = x || {id:null, fecha:hoyISO(), nota:""};
+    diaEditando = x || {id:null, fecha:hoyISO(), nota:"", actividades:[]};
     fotosNuevas = [];
+    actSel = (diaEditando.actividades || []).map(Number);
+    pintarSelActividades();
     document.getElementById("bitForm").classList.add("open");
     document.getElementById("bitFecha").textContent = fechaLarga(diaEditando.fecha);
     document.getElementById("bitFecha").dataset.val = diaEditando.fecha;
@@ -1894,9 +2068,36 @@ window.CRONOGRAMA_CONFIG = {
     document.getElementById("bitForm").classList.remove("open");
     diaEditando = null; fotosNuevas = [];
   }
+  function pintarSelActividades(){
+    const caja = document.getElementById("bitSelAct");
+    const lista = tareas.slice().sort(function(a,b){ return a.orden-b.orden; });
+    caja.innerHTML = lista.map(function(t){
+      const eq = equipoDe(t);
+      return '<label><input type="checkbox" value="'+t.id+'"'+(actSel.indexOf(t.id)>=0?' checked':'')+'>'+
+             '<span class="pt" style="background:'+CATS[t.cat].color+'"></span>'+
+             '<span>'+limpio(t.nombre)+(eq ? ' · '+limpio(eq.nombre) : '')+'</span></label>';
+    }).join("");
+    document.getElementById("bitActividades").textContent =
+      actSel.length ? "Actividades relacionadas ("+actSel.length+")" : "Actividades relacionadas";
+  }
+  document.getElementById("bitActividades").addEventListener("click", function(){
+    document.getElementById("bitSelAct").classList.toggle("open");
+  });
+  document.getElementById("bitSelAct").addEventListener("change", function(e){
+    if(e.target.tagName !== "INPUT") return;
+    const id = +e.target.value;
+    if(e.target.checked){ if(actSel.indexOf(id) < 0) actSel.push(id); }
+    else actSel = actSel.filter(function(v){ return v !== id; });
+    document.getElementById("bitActividades").textContent =
+      actSel.length ? "Actividades relacionadas ("+actSel.length+")" : "Actividades relacionadas";
+  });
+
   function pintarPendientes(){
     document.getElementById("bitPendientes").innerHTML = fotosNuevas.map(function(f,i){
-      return '<figure class="bit-foto nueva" data-i="'+i+'"><img src="'+f.imagen+'" alt="">'+
+      const cuerpo = f.tipo === "video"
+        ? '<video src="'+f.imagen+'" controls preload="metadata"></video>'
+        : '<img src="'+f.imagen+'" alt="">';
+      return '<figure class="bit-foto nueva'+(f.tipo==="video"?" video bit-video":"")+'" data-i="'+i+'">'+cuerpo+
              '<button class="quitar" title="Quitar">✕</button></figure>';
     }).join("");
   }
@@ -1904,8 +2105,11 @@ window.CRONOGRAMA_CONFIG = {
     const id = diaEditando && diaEditando.id;
     const fotos = (id && fotosDe[id]) ? fotosDe[id] : [];
     document.getElementById("bitFotosForm").innerHTML = fotos.map(function(f){
-      return '<figure class="bit-foto guardada" data-id="'+f.id+'"><img src="'+f.imagen+'" alt="">'+
-             '<button class="quitar" title="Borrar foto">✕</button></figure>';
+      const cuerpo = esVideo(f)
+        ? '<video src="'+f.imagen+'" controls preload="metadata"></video>'
+        : '<img src="'+f.imagen+'" alt="">';
+      return '<figure class="bit-foto guardada'+(esVideo(f)?" video bit-video":"")+'" data-id="'+f.id+'">'+cuerpo+
+             '<button class="quitar" title="Borrar">✕</button></figure>';
     }).join("");
   }
 
@@ -1929,17 +2133,18 @@ window.CRONOGRAMA_CONFIG = {
     if(!hayNube()){
       if(diaEditando.id){
         const x = dias.filter(function(v){ return v.id === diaEditando.id; })[0];
-        x.fecha = fecha; x.nota = nota; x.actualizado = new Date().toISOString(); x.editado_por = quien;
+        x.fecha = fecha; x.nota = nota; x.actividades = actSel.slice();
+        x.actualizado = new Date().toISOString(); x.editado_por = quien;
         fotosDe[x.id] = (fotosDe[x.id]||[]).concat(fotosNuevas.map(function(f,i){
-          return {id: "l"+Date.now()+i, imagen:f.imagen, titulo:f.titulo, autor:quien};
+          return {id:"l"+Date.now()+i, imagen:f.imagen, titulo:f.titulo, autor:quien, tipo:f.tipo||"foto"};
         }));
         x.fotos = fotosDe[x.id].length;
       } else {
         const id = "l"+Date.now();
         fotosDe[id] = fotosNuevas.map(function(f,i){
-          return {id:"l"+Date.now()+i, imagen:f.imagen, titulo:f.titulo, autor:quien};
+          return {id:"l"+Date.now()+i, imagen:f.imagen, titulo:f.titulo, autor:quien, tipo:f.tipo||"foto"};
         });
-        dias.unshift({id:id, fecha:fecha, nota:nota, autor:quien,
+        dias.unshift({id:id, fecha:fecha, nota:nota, autor:quien, actividades:actSel.slice(),
                       creado:new Date().toISOString(), fotos:fotosDe[id].length});
       }
       dias.sort(function(a,b){ return a.fecha < b.fecha ? 1 : -1; });
@@ -1949,7 +2154,7 @@ window.CRONOGRAMA_CONFIG = {
     }
 
     sbRpc("bitacora_guardar", {p_clave:clave, p_autor:quien, p_fecha:fecha, p_nota:nota,
-                               p_id: diaEditando.id || null})
+                               p_actividades: actSel, p_id: diaEditando.id || null})
       .then(function(r){
         if(!r || !r.ok){
           bitAviso(r && r.error === "clave" ? "La clave ya no es válida" : "No se pudo guardar", true);
@@ -1959,7 +2164,8 @@ window.CRONOGRAMA_CONFIG = {
         return fotosNuevas.reduce(function(cadena, f){
           return cadena.then(function(){
             return sbRpc("bitacora_foto", {p_clave:clave, p_autor:quien, p_dia:id,
-                                           p_imagen:f.imagen, p_titulo:f.titulo || null})
+                                           p_imagen:f.imagen, p_titulo:f.titulo || null,
+                                           p_tipo: f.tipo || "foto"})
               .then(function(rf){
                 if(rf && !rf.ok && rf.error === "pesada") bitAviso("Una foto pesaba demasiado", true);
               });
@@ -2030,14 +2236,31 @@ window.CRONOGRAMA_CONFIG = {
     this.value = "";
     if(!archivos.length) return;
     bitAviso("Preparando "+archivos.length+(archivos.length===1?" foto…":" fotos…"));
+    const TOPE_VIDEO = 12 * 1024 * 1024;
+    let aviso = "";
     archivos.reduce(function(cadena, a){
       return cadena.then(function(){
+        if(/^video\//.test(a.type)){
+          if(a.size > TOPE_VIDEO){
+            aviso = "Un video pesaba más de 12 MB y no se agregó. Graba clips cortos.";
+            return;
+          }
+          return new Promise(function(listo){
+            const lector = new FileReader();
+            lector.onload = function(){
+              fotosNuevas.push({imagen:lector.result, titulo:"", tipo:"video"});
+              pintarPendientes(); listo();
+            };
+            lector.onerror = function(){ listo(); };
+            lector.readAsDataURL(a);
+          });
+        }
         return reducirFoto(a).then(function(img){
-          fotosNuevas.push({imagen:img, titulo:""});
+          fotosNuevas.push({imagen:img, titulo:"", tipo:"foto"});
           pintarPendientes();
         }).catch(function(){});
       });
-    }, Promise.resolve()).then(function(){ bitAviso(""); });
+    }, Promise.resolve()).then(function(){ bitAviso(aviso, !!aviso); });
   });
 
   document.getElementById("bitPendientes").addEventListener("click", function(e){
@@ -2084,6 +2307,32 @@ window.CRONOGRAMA_CONFIG = {
   });
   document.getElementById("bitLupa").addEventListener("click", function(){ this.classList.remove("open"); });
 
+  ["fResp","fEquipo","fTipo"].forEach(function(id){
+    document.getElementById(id).addEventListener("change", function(){
+      filtros[id === "fResp" ? "resp" : id === "fEquipo" ? "equipo" : "tipo"] = this.value;
+      pintarBitacora();
+    });
+  });
+  document.getElementById("fLimpiar").addEventListener("click", function(){
+    filtros.resp = filtros.equipo = filtros.tipo = "";
+    pintarBitacora();
+  });
+
+  /* ---------- abrir la bitácora desde una actividad ---------- */
+  function verDiasDe(idTarea){
+    filtros.resp = filtros.equipo = filtros.tipo = "";
+    irA("bitacora");
+    setTimeout(function(){
+      const caja = document.querySelector('.bit-dia[data-id="'+idTarea.dia+'"]');
+      if(caja){
+        caja.scrollIntoView({behavior:"smooth", block:"center"});
+        caja.classList.add("resaltada");
+        setTimeout(function(){ caja.classList.remove("resaltada"); }, 2600);
+      }
+    }, 120);
+  }
+  window.__verDiaBitacora = function(idDia){ verDiasDe({dia:idDia}); };
+
   /* ---------- cambio de hoja ---------- */
   function irA(nueva){
     vista = nueva;
@@ -2105,6 +2354,55 @@ window.CRONOGRAMA_CONFIG = {
   });
 
   cargarBitacora();
+
+  /* ================= equipos responsables ================= */
+  const panelEq = document.getElementById("panelEq"), listaEq = document.getElementById("listaEq");
+
+  function pintarEquipos(){
+    listaEq.innerHTML = equipos.length ? equipos.map(function(e){
+      return '<div class="eqfila" data-id="'+e.id+'">'+
+        '<input type="color" class="eqcolor" value="'+e.color+'">'+
+        '<input type="text" class="eqnombre" value="'+e.nombre.replace(/"/g,"&quot;")+'" maxlength="40">'+
+        '<button class="quitar" title="Quitar equipo">✕</button></div>';
+    }).join("") : '<span class="sindias">Aún no hay equipos. Agrega el primero.</span>';
+    pintarSelectorEquipo();
+  }
+  function pintarSelectorEquipo(){
+    const sel = document.getElementById("edEquipo");
+    const actual = estado.sel ? (estado.sel.equipo || "") : "";
+    sel.innerHTML = '<option value="">— sin asignar —</option>' +
+      equipos.map(function(e){
+        return '<option value="'+e.id+'"'+(e.id===actual?' selected':'')+'>'+e.nombre+'</option>';
+      }).join("");
+  }
+  document.getElementById("btnEquipos").addEventListener("click", function(){
+    panelEq.classList.toggle("open");
+    if(panelEq.classList.contains("open")){ cerrarEditor(); pintarEquipos(); }
+  });
+  document.getElementById("eqCerrar").addEventListener("click", function(){ panelEq.classList.remove("open"); });
+  document.getElementById("eqAgregar").addEventListener("click", function(){
+    const n = equipos.length;
+    equipos.push({id:"eq"+Date.now(), nombre:"Equipo "+(n+1), color:COLORES_EQ[n % COLORES_EQ.length]});
+    pintarEquipos(); render();
+  });
+  listaEq.addEventListener("input", function(e){
+    const fila = e.target.closest(".eqfila"); if(!fila) return;
+    const eq = equipos.filter(function(x){ return x.id === fila.dataset.id; })[0]; if(!eq) return;
+    if(e.target.classList.contains("eqnombre")) eq.nombre = e.target.value.slice(0,40);
+    if(e.target.classList.contains("eqcolor"))  eq.color = e.target.value;
+    render();
+  });
+  listaEq.addEventListener("click", function(e){
+    if(!e.target.classList.contains("quitar")) return;
+    const fila = e.target.closest(".eqfila");
+    const id = fila.dataset.id;
+    equipos = equipos.filter(function(x){ return x.id !== id; });
+    tareas.forEach(function(t){ if(t.equipo === id) t.equipo = null; });
+    pintarEquipos(); render();
+  });
+  document.getElementById("edEquipo").addEventListener("change", function(){
+    if(estado.sel){ estado.sel.equipo = this.value || null; render(); }
+  });
 
   /* ================= días de descanso ================= */
   const paneld = document.getElementById("paneld"),
