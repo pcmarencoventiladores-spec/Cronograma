@@ -42,6 +42,7 @@ window.CRONOGRAMA_CONFIG = {
     --hecho:#2f9e44;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none !important}
   html,body{margin:0;padding:0}
   body{
     background:var(--bg);
@@ -160,6 +161,54 @@ window.CRONOGRAMA_CONFIG = {
   .row.oculta-cli .bar,.row.oculta-cli .lblout,.row.oculta-cli .sinprog{opacity:.4}
   .row.oculta-cli .ojo{color:#c0392b}
   .est-nover{background:#f4f6f8;color:#6b7480;border:1px dashed #c3cbd4}
+
+  /* ---------- pestañas ---------- */
+  .pestanas{display:flex;gap:6px;margin-bottom:14px}
+  .pestana{background:none;border:1px solid transparent;border-radius:9px;padding:7px 16px;
+           font-size:14px;font-weight:600;color:var(--ink-2);cursor:pointer}
+  .pestana:hover{background:#eef2f7}
+  .pestana.on{background:var(--panel);border-color:var(--line);color:var(--ink);box-shadow:var(--shadow)}
+
+  /* ---------- bitácora ---------- */
+  .bit-barra{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+  .bit-resumen{font-size:13px;color:var(--ink-3)}
+  .bit-aviso{font-size:12.5px;color:#1f7a34;min-height:18px}
+  .bit-aviso.malo{color:#c92a2a}
+  .bit-lista{display:flex;flex-direction:column;gap:12px;max-width:900px}
+  .bit-dia{background:var(--panel);border:1px solid var(--line);border-radius:12px;
+           padding:16px 18px;box-shadow:var(--shadow)}
+  .bit-dia header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:8px}
+  .bit-fecha{font-size:15px;font-weight:650}
+  .bit-fecha::first-letter{text-transform:uppercase}
+  .bit-quien{font-size:11.5px;color:var(--ink-3);margin-top:2px}
+  .bit-acc{display:flex;gap:6px;flex:none}
+  .bit-acc button{font-size:12px;padding:4px 10px}
+  .bit-nota{margin:0 0 10px;white-space:pre-wrap;font-size:14px;line-height:1.55}
+  .bit-fotos{display:flex;flex-wrap:wrap;gap:8px}
+  .bit-foto{margin:0;position:relative;width:132px}
+  .bit-foto img{width:132px;height:100px;object-fit:cover;border-radius:9px;border:1px solid var(--line);
+                cursor:zoom-in;display:block;background:#eef1f5}
+  .bit-foto figcaption{font-size:11px;color:var(--ink-3);margin-top:3px}
+  .bit-foto .quitar{position:absolute;top:4px;right:4px;border:0;border-radius:50%;width:22px;height:22px;
+                    background:rgba(22,25,29,.72);color:#fff;cursor:pointer;font-size:12px;line-height:1;padding:0}
+  .bit-vermas{font-size:12.5px;padding:5px 12px}
+  .bit-vacio{font-size:13px;color:var(--ink-3);padding:6px 0}
+  .bit-form{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px;
+            margin-bottom:16px;max-width:900px;box-shadow:var(--shadow);display:none}
+  .bit-form.open{display:block}
+  .bit-form h3{margin:0 0 12px;font-size:15px}
+  .bit-form label{display:block;font-size:11px;color:var(--ink-3);text-transform:uppercase;
+                  letter-spacing:.05em;margin-bottom:4px}
+  .bit-form textarea{width:100%;min-height:110px;font:inherit;font-size:14px;padding:9px 11px;
+                     border:1px solid var(--line);border-radius:9px;resize:vertical;color:var(--ink)}
+  .bit-form textarea:focus{outline:2px solid #b9d0f7}
+  .bit-form .fila{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .bit-form .acciones{display:flex;gap:8px;margin-top:14px}
+  .bit-lupa{position:fixed;inset:0;background:rgba(16,19,23,.88);z-index:90;display:none;
+            align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+  .bit-lupa.open{display:flex}
+  .bit-lupa img{max-width:100%;max-height:100%;border-radius:10px}
+  @media print{.pestanas,.bit-form,.bit-barra{display:none}}
 
   /* ---------- días de descanso ---------- */
   .paneld{position:fixed;right:18px;bottom:18px;width:330px;background:var(--panel);
@@ -330,6 +379,12 @@ window.CRONOGRAMA_CONFIG = {
     <div class="kpis" id="kpis"></div>
   </header>
 
+  <div class="pestanas">
+    <button class="pestana on" data-vista="cronograma">Cronograma</button>
+    <button class="pestana" data-vista="bitacora">Bitácora diaria</button>
+  </div>
+
+  <div id="vistaCronograma">
   <div class="toolbar">
     <div class="seg" id="zoom">
       <button data-z="semana" class="on">Semanas</button>
@@ -371,7 +426,47 @@ window.CRONOGRAMA_CONFIG = {
     </div>
   </div>
 
-  <footer class="pie">
+  </div><!-- /vistaCronograma -->
+
+  <section id="vistaBitacora" hidden>
+    <div class="bit-barra">
+      <button class="primary" id="bitNuevo">Registrar día</button>
+      <span class="bit-resumen" id="bitResumen"></span>
+      <span class="bit-aviso" id="bitAviso"></span>
+    </div>
+
+    <div class="bit-form" id="bitForm">
+      <h3 id="bitTitulo">Registrar día</h3>
+      <div class="fila">
+        <div>
+          <label>Fecha</label>
+          <button class="fecha" id="bitFecha" data-val=""></button>
+        </div>
+        <div id="bitQuienCaja">
+          <label for="bitAutor">Tu nombre</label>
+          <input type="text" id="bitAutor" placeholder="Quién registra el día">
+        </div>
+      </div>
+      <label for="bitNota">Qué se hizo</label>
+      <textarea id="bitNota" placeholder="Ejemplo: se desmontaron 4 equipos de la pared Oeste; zona franca tapó los boquetes."></textarea>
+      <div class="fila" style="margin-top:12px">
+        <button id="bitAgregarFotos">Agregar fotos</button>
+        <input type="file" id="bitArchivos" accept="image/*" multiple hidden>
+      </div>
+      <div class="bit-fotos" id="bitPendientes"></div>
+      <div class="bit-fotos" id="bitFotosForm" style="margin-top:8px"></div>
+      <div class="acciones">
+        <button id="bitCancelar">Cancelar</button>
+        <button class="primary" id="bitGuardar">Guardar</button>
+      </div>
+    </div>
+
+    <div class="bit-lista" id="bitLista"></div>
+  </section>
+
+  <div class="bit-lupa" id="bitLupa"><img alt="Foto de la bitácora"></div>
+
+  <footer class="pie" id="pieCronograma">
     <span>Arrastra una barra para moverla · arrastra sus extremos para alargarla o acortarla · haz clic para editar fechas y avance.</span>
     <span>El ojo junto a cada actividad la oculta del modo lectura: quien entre sin la clave no la ve ni la cuenta en los totales.</span>
     <span>La parte verde de cada barra son los días ya trabajados; al completarse toda la barra queda verde con la etiqueta «Acabado».</span>
@@ -1620,6 +1715,396 @@ window.CRONOGRAMA_CONFIG = {
   }
 
   document.getElementById("btnExcel").addEventListener("click", exportarExcel);
+
+  /* ================= BITÁCORA DIARIA =================
+     Notas y fotos de lo que se hace cada día, con el nombre de quien
+     lo registra. En línea guarda en Supabase; en la copia local, en
+     el navegador.                                                     */
+
+  const LLAVE_BIT = "bitacora-tegra-v1";
+  let dias = [];              // [{id, fecha, nota, autor, creado, actualizado, editado_por, fotos:n}]
+  let fotosDe = {};           // id de día → [{id, imagen, titulo, autor}]
+  let diaEditando = null;     // objeto en edición
+  let fotosNuevas = [];       // fotos aún no guardadas {imagen, titulo}
+  let vista = "cronograma";
+
+  function hayNube(){ try{ return EN_LINEA; }catch(err){ return false; } }
+  function puedeEditar(){ try{ return !soloLectura; }catch(err){ return true; } }
+  function hoyISO(){
+    const n = new Date();
+    return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0");
+  }
+  function fechaLarga(f){
+    const x = new Date(d(f));
+    return DIAS_C[x.getUTCDay()]+" "+x.getUTCDate()+" de "+MESES[x.getUTCMonth()]+" de "+x.getUTCFullYear();
+  }
+  function horaDe(iso){
+    const f = new Date(iso);
+    return f.getDate()+" "+MESC[f.getMonth()]+" "+String(f.getHours()).padStart(2,"0")+":"+
+           String(f.getMinutes()).padStart(2,"0");
+  }
+  function limpio(txt){
+    return String(txt||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+
+  /* ---------- guardar en el navegador (cuando no hay base) ---------- */
+  function guardarBitLocal(){
+    try{ localStorage.setItem(LLAVE_BIT, JSON.stringify({dias:dias, fotos:fotosDe})); }catch(err){}
+  }
+  function cargarBitLocal(){
+    try{
+      const c = JSON.parse(localStorage.getItem(LLAVE_BIT) || "null");
+      if(c && Array.isArray(c.dias)){ dias = c.dias; fotosDe = c.fotos || {}; }
+    }catch(err){}
+  }
+
+  /* ---------- traer los días ---------- */
+  function cargarBitacora(){
+    if(!hayNube()){ cargarBitLocal(); pintarBitacora(); return Promise.resolve(); }
+    return sbFetch("bitacora?select=id,fecha,nota,autor,creado,actualizado,editado_por&order=fecha.desc,id.desc&limit=300")
+      .then(function(filas){
+        dias = filas || [];
+        return sbFetch("bitacora_fotos?select=id,dia&limit=3000");
+      })
+      .then(function(fotos){
+        const cuenta = {};
+        (fotos||[]).forEach(function(f){ cuenta[f.dia] = (cuenta[f.dia]||0) + 1; });
+        dias.forEach(function(x){ x.fotos = cuenta[x.id] || 0; });
+        pintarBitacora();
+      })
+      .catch(function(){
+        bitAviso("No se pudo leer la bitácora", true);
+      });
+  }
+  function cargarFotos(id){
+    if(!hayNube()) return Promise.resolve(fotosDe[id] || []);
+    if(fotosDe[id]) return Promise.resolve(fotosDe[id]);
+    return sbFetch("bitacora_fotos?dia=eq."+id+"&select=id,imagen,titulo,autor&order=id")
+      .then(function(f){ fotosDe[id] = f || []; return fotosDe[id]; })
+      .catch(function(){ return []; });
+  }
+
+  /* ---------- reducir la foto antes de guardarla ---------- */
+  function reducirFoto(archivo){
+    return new Promise(function(listo, falla){
+      const lector = new FileReader();
+      lector.onerror = function(){ falla(new Error("lectura")); };
+      lector.onload = function(){
+        const img = new Image();
+        img.onerror = function(){ falla(new Error("imagen")); };
+        img.onload = function(){
+          const max = 1600;
+          let an = img.width, al = img.height;
+          if(an > max || al > max){
+            const p = Math.min(max/an, max/al);
+            an = Math.round(an*p); al = Math.round(al*p);
+          }
+          const lienzo = document.createElement("canvas");
+          lienzo.width = an; lienzo.height = al;
+          lienzo.getContext("2d").drawImage(img, 0, 0, an, al);
+          listo(lienzo.toDataURL("image/jpeg", 0.72));
+        };
+        img.src = lector.result;
+      };
+      lector.readAsDataURL(archivo);
+    });
+  }
+
+  /* ---------- pintar la lista ---------- */
+  function bitAviso(txt, malo){
+    const e = document.getElementById("bitAviso");
+    e.textContent = txt || "";
+    e.className = "bit-aviso" + (malo ? " malo" : "");
+  }
+  function pintarBitacora(){
+    const cont = document.getElementById("bitLista");
+    document.getElementById("bitNuevo").style.display = puedeEditar() ? "" : "none";
+
+    if(!dias.length){
+      cont.innerHTML = '<div class="bit-vacio">Todavía no hay días registrados.' +
+        (puedeEditar() ? ' Usa «Registrar día» para anotar lo que se hizo hoy.' : '') + '</div>';
+      document.getElementById("bitResumen").textContent = "";
+      return;
+    }
+    document.getElementById("bitResumen").textContent =
+      dias.length + (dias.length === 1 ? " día registrado" : " días registrados");
+
+    cont.innerHTML = dias.map(function(x){
+      const nFotos = x.fotos || (fotosDe[x.id] ? fotosDe[x.id].length : 0);
+      return '<article class="bit-dia" data-id="'+x.id+'">'+
+        '<header>'+
+          '<div>'+
+            '<div class="bit-fecha">'+fechaLarga(x.fecha)+'</div>'+
+            '<div class="bit-quien">Registró '+limpio(x.autor || "sin nombre")+
+              (x.creado ? ' · '+horaDe(x.creado) : '')+
+              (x.editado_por && x.editado_por !== x.autor
+                 ? ' · editó '+limpio(x.editado_por) : '')+
+            '</div>'+
+          '</div>'+
+          (puedeEditar()
+            ? '<div class="bit-acc"><button class="bit-editar">Editar</button>'+
+              '<button class="bit-borrar danger">Borrar</button></div>'
+            : '')+
+        '</header>'+
+        (x.nota ? '<p class="bit-nota">'+limpio(x.nota)+'</p>' : '')+
+        (nFotos ? '<div class="bit-fotos" data-cargar="'+x.id+'">'+
+                    '<button class="bit-vermas">Ver '+nFotos+(nFotos===1?' foto':' fotos')+'</button>'+
+                  '</div>'
+                : '')+
+      '</article>';
+    }).join("");
+  }
+
+  function pintarFotos(cont, id){
+    const fotos = fotosDe[id] || [];
+    cont.innerHTML = fotos.map(function(f){
+      return '<figure class="bit-foto" data-id="'+f.id+'">'+
+        '<img src="'+f.imagen+'" alt="'+limpio(f.titulo||"foto")+'" loading="lazy">'+
+        (f.titulo ? '<figcaption>'+limpio(f.titulo)+'</figcaption>' : '')+
+      '</figure>';
+    }).join("") || '<div class="bit-vacio">Sin fotos.</div>';
+  }
+
+  /* ---------- formulario ---------- */
+  function abrirFormulario(x){
+    diaEditando = x || {id:null, fecha:hoyISO(), nota:""};
+    fotosNuevas = [];
+    document.getElementById("bitForm").classList.add("open");
+    document.getElementById("bitFecha").textContent = fechaLarga(diaEditando.fecha);
+    document.getElementById("bitFecha").dataset.val = diaEditando.fecha;
+    document.getElementById("bitNota").value = diaEditando.nota || "";
+    const caja = document.getElementById("bitQuienCaja");
+    const sesion = (function(){ try{ return autor || ""; }catch(err){ return ""; } })();
+    caja.hidden = !!sesion;
+    if(!sesion){
+      let previo = "";
+      try{ previo = localStorage.getItem("cron-autor") || ""; }catch(err){}
+      document.getElementById("bitAutor").value = diaEditando.autor || previo;
+    }
+    document.getElementById("bitTitulo").textContent = x ? "Editar el día" : "Registrar día";
+    pintarPendientes();
+    if(x){
+      cargarFotos(x.id).then(function(){ pintarFotosForm(); });
+    } else {
+      document.getElementById("bitFotosForm").innerHTML = "";
+    }
+    document.getElementById("bitNota").focus();
+  }
+  function cerrarFormulario(){
+    document.getElementById("bitForm").classList.remove("open");
+    diaEditando = null; fotosNuevas = [];
+  }
+  function pintarPendientes(){
+    document.getElementById("bitPendientes").innerHTML = fotosNuevas.map(function(f,i){
+      return '<figure class="bit-foto nueva" data-i="'+i+'"><img src="'+f.imagen+'" alt="">'+
+             '<button class="quitar" title="Quitar">✕</button></figure>';
+    }).join("");
+  }
+  function pintarFotosForm(){
+    const id = diaEditando && diaEditando.id;
+    const fotos = (id && fotosDe[id]) ? fotosDe[id] : [];
+    document.getElementById("bitFotosForm").innerHTML = fotos.map(function(f){
+      return '<figure class="bit-foto guardada" data-id="'+f.id+'"><img src="'+f.imagen+'" alt="">'+
+             '<button class="quitar" title="Borrar foto">✕</button></figure>';
+    }).join("");
+  }
+
+  /* ---------- guardar ---------- */
+  function guardarDia(){
+    if(!diaEditando) return;
+    const fecha = document.getElementById("bitFecha").dataset.val;
+    const nota = document.getElementById("bitNota").value.trim();
+    if(!nota && !fotosNuevas.length && !(diaEditando.id)){
+      bitAviso("Escribe una nota o agrega una foto.", true); return;
+    }
+    let quien = "";
+    try{ quien = autor || ""; }catch(err){}
+    if(!quien){
+      quien = document.getElementById("bitAutor").value.trim();
+      if(!quien){ bitAviso("Escribe tu nombre para registrar el día.", true); return; }
+      try{ localStorage.setItem("cron-autor", quien); }catch(err){}
+    }
+    bitAviso("Guardando…");
+
+    if(!hayNube()){
+      if(diaEditando.id){
+        const x = dias.filter(function(v){ return v.id === diaEditando.id; })[0];
+        x.fecha = fecha; x.nota = nota; x.actualizado = new Date().toISOString(); x.editado_por = quien;
+        fotosDe[x.id] = (fotosDe[x.id]||[]).concat(fotosNuevas.map(function(f,i){
+          return {id: "l"+Date.now()+i, imagen:f.imagen, titulo:f.titulo, autor:quien};
+        }));
+        x.fotos = fotosDe[x.id].length;
+      } else {
+        const id = "l"+Date.now();
+        fotosDe[id] = fotosNuevas.map(function(f,i){
+          return {id:"l"+Date.now()+i, imagen:f.imagen, titulo:f.titulo, autor:quien};
+        });
+        dias.unshift({id:id, fecha:fecha, nota:nota, autor:quien,
+                      creado:new Date().toISOString(), fotos:fotosDe[id].length});
+      }
+      dias.sort(function(a,b){ return a.fecha < b.fecha ? 1 : -1; });
+      guardarBitLocal(); cerrarFormulario(); pintarBitacora();
+      bitAviso("Guardado en este navegador");
+      return;
+    }
+
+    sbRpc("bitacora_guardar", {p_clave:clave, p_autor:quien, p_fecha:fecha, p_nota:nota,
+                               p_id: diaEditando.id || null})
+      .then(function(r){
+        if(!r || !r.ok){
+          bitAviso(r && r.error === "clave" ? "La clave ya no es válida" : "No se pudo guardar", true);
+          return null;
+        }
+        const id = r.id;
+        return fotosNuevas.reduce(function(cadena, f){
+          return cadena.then(function(){
+            return sbRpc("bitacora_foto", {p_clave:clave, p_autor:quien, p_dia:id,
+                                           p_imagen:f.imagen, p_titulo:f.titulo || null})
+              .then(function(rf){
+                if(rf && !rf.ok && rf.error === "pesada") bitAviso("Una foto pesaba demasiado", true);
+              });
+          });
+        }, Promise.resolve()).then(function(){ return id; });
+      })
+      .then(function(id){
+        if(!id) return;
+        delete fotosDe[id];
+        cerrarFormulario();
+        bitAviso("Guardado");
+        return cargarBitacora();
+      })
+      .catch(function(){ bitAviso("Sin conexión: no se guardó", true); });
+  }
+
+  function borrarDia(id){
+    if(!hayNube()){
+      dias = dias.filter(function(x){ return x.id !== id; });
+      delete fotosDe[id];
+      guardarBitLocal(); pintarBitacora(); bitAviso("Día borrado");
+      return;
+    }
+    sbRpc("bitacora_borrar", {p_clave:clave, p_id:id}).then(function(r){
+      if(r && r.ok){ delete fotosDe[id]; bitAviso("Día borrado"); cargarBitacora(); }
+      else bitAviso("No se pudo borrar", true);
+    }).catch(function(){ bitAviso("Sin conexión", true); });
+  }
+
+  function borrarFoto(id){
+    if(!hayNube()){
+      Object.keys(fotosDe).forEach(function(k){
+        fotosDe[k] = fotosDe[k].filter(function(f){ return f.id !== id; });
+      });
+      if(diaEditando && diaEditando.id) dias.forEach(function(x){
+        if(x.id === diaEditando.id) x.fotos = (fotosDe[x.id]||[]).length;
+      });
+      guardarBitLocal(); pintarFotosForm(); pintarBitacora();
+      return;
+    }
+    sbRpc("bitacora_borrar_foto", {p_clave:clave, p_id:id}).then(function(r){
+      if(r && r.ok){
+        const dia = diaEditando && diaEditando.id;
+        if(dia && fotosDe[dia]) fotosDe[dia] = fotosDe[dia].filter(function(f){ return f.id !== id; });
+        pintarFotosForm();
+        cargarBitacora();
+      }
+    }).catch(function(){ bitAviso("Sin conexión", true); });
+  }
+
+  /* ---------- eventos ---------- */
+  document.getElementById("bitNuevo").addEventListener("click", function(){ abrirFormulario(null); });
+  document.getElementById("bitCancelar").addEventListener("click", cerrarFormulario);
+  document.getElementById("bitGuardar").addEventListener("click", guardarDia);
+
+  document.getElementById("bitFecha").addEventListener("click", function(){
+    const b = this;
+    abrirCal(b, b.dataset.val, function(f){
+      b.dataset.val = f;
+      b.textContent = fechaLarga(f);
+    });
+  });
+
+  const entradaFotos = document.getElementById("bitArchivos");
+  document.getElementById("bitAgregarFotos").addEventListener("click", function(){ entradaFotos.click(); });
+  entradaFotos.addEventListener("change", function(){
+    const archivos = Array.prototype.slice.call(this.files || []);
+    this.value = "";
+    if(!archivos.length) return;
+    bitAviso("Preparando "+archivos.length+(archivos.length===1?" foto…":" fotos…"));
+    archivos.reduce(function(cadena, a){
+      return cadena.then(function(){
+        return reducirFoto(a).then(function(img){
+          fotosNuevas.push({imagen:img, titulo:""});
+          pintarPendientes();
+        }).catch(function(){});
+      });
+    }, Promise.resolve()).then(function(){ bitAviso(""); });
+  });
+
+  document.getElementById("bitPendientes").addEventListener("click", function(e){
+    const fig = e.target.closest(".bit-foto");
+    if(fig && e.target.classList.contains("quitar")){
+      fotosNuevas.splice(+fig.dataset.i, 1);
+      pintarPendientes();
+    }
+  });
+  document.getElementById("bitFotosForm").addEventListener("click", function(e){
+    const fig = e.target.closest(".bit-foto");
+    if(fig && e.target.classList.contains("quitar")) borrarFoto(isNaN(+fig.dataset.id) ? fig.dataset.id : +fig.dataset.id);
+  });
+
+  document.getElementById("bitLista").addEventListener("click", function(e){
+    const caja = e.target.closest(".bit-dia");
+    if(!caja) return;
+    const id = isNaN(+caja.dataset.id) ? caja.dataset.id : +caja.dataset.id;
+
+    if(e.target.classList.contains("bit-editar")){
+      const x = dias.filter(function(v){ return v.id === id; })[0];
+      if(x) abrirFormulario(x);
+      return;
+    }
+    if(e.target.classList.contains("bit-borrar")){
+      const b = e.target;
+      if(b.dataset.armado){ borrarDia(id); return; }
+      b.dataset.armado = "1"; b.textContent = "¿Seguro? Sí";
+      setTimeout(function(){ b.dataset.armado = ""; b.textContent = "Borrar"; }, 4000);
+      return;
+    }
+    if(e.target.classList.contains("bit-vermas")){
+      const cont = e.target.parentNode;
+      cont.innerHTML = '<div class="bit-vacio">Cargando fotos…</div>';
+      cargarFotos(id).then(function(){ pintarFotos(cont, id); });
+      return;
+    }
+    const img = e.target.closest(".bit-foto img");
+    if(img){
+      const lupa = document.getElementById("bitLupa");
+      lupa.querySelector("img").src = img.src;
+      lupa.classList.add("open");
+    }
+  });
+  document.getElementById("bitLupa").addEventListener("click", function(){ this.classList.remove("open"); });
+
+  /* ---------- cambio de hoja ---------- */
+  function irA(nueva){
+    vista = nueva;
+    document.querySelectorAll(".pestana").forEach(function(b){
+      b.classList.toggle("on", b.dataset.vista === nueva);
+    });
+    document.getElementById("vistaCronograma").hidden = (nueva !== "cronograma");
+    const pie = document.getElementById("pieCronograma");
+    if(pie) pie.hidden = (nueva !== "cronograma");
+    document.getElementById("vistaBitacora").hidden   = (nueva !== "bitacora");
+    if(nueva === "bitacora"){
+      cerrarEditor();
+      pintarBitacora();
+      if(hayNube() && !dias.length) cargarBitacora();
+    }
+  }
+  document.querySelectorAll(".pestana").forEach(function(b){
+    b.addEventListener("click", function(){ irA(this.dataset.vista); });
+  });
+
+  cargarBitacora();
 
   /* ================= días de descanso ================= */
   const paneld = document.getElementById("paneld"),
