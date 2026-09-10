@@ -361,7 +361,22 @@ window.CRONOGRAMA_CONFIG = {
   body.solo-lectura #btnSalir,
   body.solo-lectura #btnDescansos,
   body.solo-lectura #btnFechas,
-  body.solo-lectura #btnEquipos{display:none}
+  body.solo-lectura #btnEquipos,
+  body.solo-lectura #btnUsuarios{display:none}
+  body:not(.es-admin) #btnUsuarios{display:none}
+  .usrform{display:none;border-top:1px solid var(--line-2);margin-top:10px;padding-top:10px}
+  .usrform.open{display:block}
+  .usrfila{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:9px;
+           padding:7px 10px;margin-bottom:6px;font-size:12.5px}
+  .usrfila .quien{flex:1;min-width:0}
+  .usrfila .quien b{font-weight:650}
+  .usrfila .quien span{color:var(--ink-3);font-size:11px;display:block}
+  .usrfila .rol{font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px;
+                background:#eef2f7;color:var(--ink-2)}
+  .usrfila .rol.admin{background:#e7efff;color:#14428f}
+  .usrfila button{border:0;background:none;cursor:pointer;color:var(--ink-3);font-size:12px;padding:2px 5px}
+  .usrfila button:hover{color:var(--accent)}
+  .usrfila .quitar:hover{color:#c92a2a}
   body.solo-lectura .bar{cursor:default}
   body.solo-lectura .editor{display:none !important}
   body.solo-lectura .sinprog{display:none}
@@ -455,6 +470,7 @@ window.CRONOGRAMA_CONFIG = {
     <button id="btnDescansos">Días de descanso</button>
     <button id="btnEntrar">Entrar como editor</button>
     <button id="btnHistorial">Historial</button>
+    <button id="btnUsuarios">Usuarios</button>
     <button id="btnSalir">Salir</button>
     <button id="btnAdd">+ Actividad</button>
     <button class="ghost on" id="btnHoy">Línea de hoy</button>
@@ -611,17 +627,43 @@ window.CRONOGRAMA_CONFIG = {
 <div class="velo" id="velo">
   <div class="caja">
     <h3>Entrar como editor</h3>
-    <p>Cualquiera con el enlace puede ver el cronograma. Para mover fechas y registrar avance hace falta la clave del equipo.</p>
-    <label for="inClave">Clave</label>
+    <p>Cualquiera con el enlace puede ver el cronograma. Para editarlo entra con tu usuario y contraseña.</p>
+    <label for="inUsuario">Usuario</label>
+    <input type="text" id="inUsuario" autocomplete="username" placeholder="francisco">
+    <label for="inClave">Contraseña</label>
     <input type="password" id="inClave" autocomplete="current-password">
-    <label for="inAutor">Tu nombre</label>
-    <input type="text" id="inAutor" placeholder="Para saber quién hizo cada cambio">
     <div class="aviso-caja" id="avisoClave"></div>
     <div class="fila">
       <button id="btnCancelar">Cancelar</button>
       <button class="primary" id="btnEntrarOk">Entrar</button>
     </div>
   </div>
+</div>
+
+<div class="paneld" id="panelUsr" style="width:390px">
+  <h3>Usuarios que pueden editar</h3>
+  <div class="exp">Cada persona entra con su usuario y su contraseña; los cambios quedan firmados
+  con su nombre. Solo un administrador ve esta ventana.</div>
+  <div id="usrLista"></div>
+  <div class="acc"><button id="usrNuevo">+ Agregar usuario</button></div>
+  <div class="usrform" id="usrForm">
+    <div class="two">
+      <div class="fld"><label>Usuario</label><input type="text" id="usrLogin" placeholder="francisco"></div>
+      <div class="fld"><label>Nombre</label><input type="text" id="usrNombre" placeholder="Francisco Pérez"></div>
+    </div>
+    <div class="two">
+      <div class="fld"><label>Contraseña</label><input type="password" id="usrClave" placeholder="mínimo 6"></div>
+      <div class="fld"><label>Puede</label>
+        <select id="usrRol"><option value="editor">Editar</option><option value="admin">Editar y administrar usuarios</option></select>
+      </div>
+    </div>
+    <div class="aviso-caja" id="usrAviso"></div>
+    <div class="acciones">
+      <button id="usrCancelar">Cancelar</button>
+      <button class="primary" id="usrGuardar">Guardar</button>
+    </div>
+  </div>
+  <div class="acciones"><button class="primary" id="usrCerrar">Listo</button></div>
 </div>
 
 <div class="panelh" id="panelh">
@@ -751,7 +793,7 @@ window.CRONOGRAMA_CONFIG = {
   const ORIGINAL = JSON.parse(JSON.stringify(tareas));
   const chip = document.getElementById("estadoGuardado");
   let soloLectura = EN_LINEA;          // hasta que alguien entre con la clave
-  let clave = "", autor = "";
+  let clave = "", autor = "", usuario = "", rol = "editor";
   let version = null;                  // marca de tiempo de lo que tenemos cargado
   let tGuardar = null, guardando = false, hayAlmacen = true;
   let ultimoJson = "", jsonGuardado = "", mirando = false;
@@ -860,7 +902,7 @@ window.CRONOGRAMA_CONFIG = {
     avisoGuardado("Guardando…", "aviso");
     sbRpc("cronograma_guardar", {
       p_clave: clave, p_autor: autor,
-      p_datos: paquete(), p_version: version
+      p_datos: paquete(), p_version: version, p_usuario: usuario
     }).then(function(r){
       guardando = false;
       if(r && r.ok){
@@ -907,16 +949,18 @@ window.CRONOGRAMA_CONFIG = {
     document.body.classList.toggle("solo-lectura", soloLectura);
     if(soloLectura) cerrarEditor();
   }
-  function entrarEditor(c, a){
-    clave = c; autor = a || "sin nombre";
+  function entrarEditor(u, c, a, r){
+    usuario = u || ""; clave = c; autor = a || "sin nombre"; rol = r || "editor";
     soloLectura = false;
-    try{ sessionStorage.setItem("cron-editor", JSON.stringify({c:clave, a:autor})); }catch(err){}
+    document.body.classList.toggle("es-admin", rol === "admin");
+    try{ sessionStorage.setItem("cron-editor", JSON.stringify({u:usuario, c:clave, a:autor, r:rol})); }catch(err){}
     try{ localStorage.setItem("cron-autor", autor); }catch(err){}
     aplicarModo(); render();
     avisoGuardado("Modo edición · " + autor);
   }
   function salirEditor(){
-    clave = ""; soloLectura = true;
+    clave = ""; usuario = ""; rol = "editor"; soloLectura = true;
+    document.body.classList.remove("es-admin");
     try{ sessionStorage.removeItem("cron-editor"); }catch(err){}
     aplicarModo(); render();
     avisoGuardado("Solo lectura");
@@ -939,7 +983,11 @@ window.CRONOGRAMA_CONFIG = {
     avisoGuardado("Cargando…", "aviso");
     try{
       const ses = JSON.parse(sessionStorage.getItem("cron-editor") || "null");
-      if(ses && ses.c){ clave = ses.c; autor = ses.a; soloLectura = false; }
+      if(ses && ses.c){
+        clave = ses.c; autor = ses.a; usuario = ses.u || ""; rol = ses.r || "editor";
+        soloLectura = false;
+        document.body.classList.toggle("es-admin", rol === "admin");
+      }
     }catch(err){}
     cargarNube().then(function(){ aplicarModo(); render(); })
                 .catch(function(){ avisoGuardado("No se pudo conectar a la base de datos", "error"); });
@@ -2167,7 +2215,8 @@ window.CRONOGRAMA_CONFIG = {
     }
 
     sbRpc("bitacora_guardar", {p_clave:clave, p_autor:quien, p_fecha:fecha, p_nota:nota,
-                               p_actividades: actSel, p_id: diaEditando.id || null})
+                               p_actividades: actSel, p_id: diaEditando.id || null,
+                               p_usuario: (typeof usuario === "string" ? usuario : "")})
       .then(function(r){
         if(!r || !r.ok){
           bitAviso(r && r.error === "clave" ? "La clave ya no es válida" : "No se pudo guardar", true);
@@ -2178,7 +2227,8 @@ window.CRONOGRAMA_CONFIG = {
           return cadena.then(function(){
             return sbRpc("bitacora_foto", {p_clave:clave, p_autor:quien, p_dia:id,
                                            p_imagen:f.imagen, p_titulo:f.titulo || null,
-                                           p_tipo: f.tipo || "foto"})
+                                           p_tipo: f.tipo || "foto",
+                                           p_usuario: (typeof usuario === "string" ? usuario : "")})
               .then(function(rf){
                 if(rf && !rf.ok && rf.error === "pesada") bitAviso("Una foto pesaba demasiado", true);
               });
@@ -2202,7 +2252,8 @@ window.CRONOGRAMA_CONFIG = {
       guardarBitLocal(); pintarBitacora(); bitAviso("Día borrado");
       return;
     }
-    sbRpc("bitacora_borrar", {p_clave:clave, p_id:id}).then(function(r){
+    sbRpc("bitacora_borrar", {p_clave:clave, p_id:id,
+                              p_usuario: (typeof usuario === "string" ? usuario : "")}).then(function(r){
       if(r && r.ok){ delete fotosDe[id]; bitAviso("Día borrado"); cargarBitacora(); }
       else bitAviso("No se pudo borrar", true);
     }).catch(function(){ bitAviso("Sin conexión", true); });
@@ -2219,7 +2270,8 @@ window.CRONOGRAMA_CONFIG = {
       guardarBitLocal(); pintarFotosForm(); pintarBitacora();
       return;
     }
-    sbRpc("bitacora_borrar_foto", {p_clave:clave, p_id:id}).then(function(r){
+    sbRpc("bitacora_borrar_foto", {p_clave:clave, p_id:id,
+                                   p_usuario: (typeof usuario === "string" ? usuario : "")}).then(function(r){
       if(r && r.ok){
         const dia = diaEditando && diaEditando.id;
         if(dia && fotosDe[dia]) fotosDe[dia] = fotosDe[dia].filter(function(f){ return f.id !== id; });
@@ -2484,16 +2536,16 @@ window.CRONOGRAMA_CONFIG = {
 
   /* ================= entrar como editor ================= */
   const velo = document.getElementById("velo"),
+        inUsuario = document.getElementById("inUsuario"),
         inClave = document.getElementById("inClave"),
-        inAutor = document.getElementById("inAutor"),
         avisoClave = document.getElementById("avisoClave");
 
   function abrirVelo(){
     avisoClave.textContent = "";
     inClave.value = "";
-    try{ inAutor.value = localStorage.getItem("cron-autor") || ""; }catch(err){}
+    try{ inUsuario.value = localStorage.getItem("cron-usuario") || ""; }catch(err){}
     velo.classList.add("open");
-    inClave.focus();
+    (inUsuario.value ? inClave : inUsuario).focus();
   }
   function cerrarVelo(){ velo.classList.remove("open"); }
 
@@ -2504,20 +2556,120 @@ window.CRONOGRAMA_CONFIG = {
   document.getElementById("btnCancelar").addEventListener("click", cerrarVelo);
   velo.addEventListener("click", function(e){ if(e.target === velo) cerrarVelo(); });
   inClave.addEventListener("keydown", function(e){ if(e.key === "Enter") comprobarClave(); });
-  inAutor.addEventListener("keydown", function(e){ if(e.key === "Enter") comprobarClave(); });
+  inUsuario.addEventListener("keydown", function(e){ if(e.key === "Enter") inClave.focus(); });
   document.getElementById("btnEntrarOk").addEventListener("click", comprobarClave);
 
   function comprobarClave(){
-    const c = inClave.value.trim(), a = inAutor.value.trim();
-    if(!c){ avisoClave.textContent = "Escribe la clave."; return; }
-    if(!a){ avisoClave.textContent = "Escribe tu nombre para registrar los cambios."; return; }
+    const u = inUsuario.value.trim().toLowerCase(), c = inClave.value.trim();
+    if(!c){ avisoClave.textContent = "Escribe tu contraseña."; return; }
     avisoClave.textContent = "Comprobando…";
-    sbRpc("cronograma_clave_ok", {p_clave: c}).then(function(ok){
-      if(ok === true){ cerrarVelo(); entrarEditor(c, a); }
-      else avisoClave.textContent = "Esa clave no es correcta.";
+    sbRpc("usuario_entrar", {p_usuario: u, p_clave: c}).then(function(r){
+      if(r && r.ok){
+        try{ localStorage.setItem("cron-usuario", u); }catch(err){}
+        cerrarVelo();
+        entrarEditor(u, c, r.nombre, r.rol);
+        return;
+      }
+      avisoClave.textContent = u ? "Usuario o contraseña incorrectos."
+                                 : "Esa clave no es correcta. Si tienes usuario, escríbelo arriba.";
     }).catch(function(){ avisoClave.textContent = "No se pudo conectar con la base de datos."; });
   }
   document.getElementById("btnSalir").addEventListener("click", salirEditor);
+
+  /* ================= usuarios ================= */
+  const panelUsr = document.getElementById("panelUsr"),
+        usrLista = document.getElementById("usrLista"),
+        usrForm  = document.getElementById("usrForm"),
+        usrAviso = document.getElementById("usrAviso");
+  let usrEditando = null;
+
+  function usrAbrirForm(u){
+    usrEditando = u || null;
+    usrForm.classList.add("open");
+    usrAviso.textContent = "";
+    document.getElementById("usrLogin").value  = u ? u.usuario : "";
+    document.getElementById("usrLogin").disabled = !!u;
+    document.getElementById("usrNombre").value = u ? u.nombre : "";
+    document.getElementById("usrClave").value  = "";
+    document.getElementById("usrClave").placeholder = u ? "dejar vacío = no cambiarla" : "mínimo 6";
+    document.getElementById("usrRol").value    = u ? u.rol : "editor";
+  }
+  function usrCerrarForm(){ usrForm.classList.remove("open"); usrEditando = null; }
+
+  function cargarUsuarios(){
+    usrLista.innerHTML = '<div class="sindias">Cargando…</div>';
+    sbRpc("usuarios_listar", {p_usuario: usuario, p_clave: clave}).then(function(r){
+      if(!r || !r.ok){
+        usrLista.innerHTML = '<div class="sindias">Solo un administrador puede ver los usuarios.</div>';
+        return;
+      }
+      usrLista.innerHTML = (r.usuarios || []).map(function(u){
+        return '<div class="usrfila" data-usuario="'+u.usuario+'">'+
+          '<div class="quien"><b>'+u.nombre+'</b><span>'+u.usuario+
+            (u.activo ? '' : ' · desactivado')+'</span></div>'+
+          '<span class="rol'+(u.rol==="admin"?" admin":"")+'">'+(u.rol==="admin"?"Admin":"Editor")+'</span>'+
+          '<button class="editar" title="Editar">Editar</button>'+
+          '<button class="quitar" title="Quitar">✕</button></div>';
+      }).join("") || '<div class="sindias">Aún no hay usuarios.</div>';
+    }).catch(function(){ usrLista.innerHTML = '<div class="sindias">No se pudo conectar.</div>'; });
+  }
+
+  document.getElementById("btnUsuarios").addEventListener("click", function(){
+    panelUsr.classList.toggle("open");
+    if(panelUsr.classList.contains("open")){ cerrarEditor(); usrCerrarForm(); cargarUsuarios(); }
+  });
+  document.getElementById("usrCerrar").addEventListener("click", function(){ panelUsr.classList.remove("open"); });
+  document.getElementById("usrNuevo").addEventListener("click", function(){ usrAbrirForm(null); });
+  document.getElementById("usrCancelar").addEventListener("click", usrCerrarForm);
+
+  usrLista.addEventListener("click", function(e){
+    const fila = e.target.closest(".usrfila"); if(!fila) return;
+    const login = fila.dataset.usuario;
+    if(e.target.classList.contains("editar")){
+      usrAbrirForm({usuario: login,
+                    nombre: fila.querySelector(".quien b").textContent,
+                    rol: fila.querySelector(".rol").textContent === "Admin" ? "admin" : "editor"});
+      return;
+    }
+    if(e.target.classList.contains("quitar")){
+      const b = e.target;
+      if(!b.dataset.armado){
+        b.dataset.armado = "1"; b.textContent = "¿Seguro?";
+        setTimeout(function(){ b.dataset.armado = ""; b.textContent = "✕"; }, 4000);
+        return;
+      }
+      sbRpc("usuario_borrar", {p_usuario: usuario, p_clave: clave, u_usuario: login})
+        .then(function(r){
+          if(r && r.ok) cargarUsuarios();
+          else usrLista.insertAdjacentHTML("afterbegin",
+            '<div class="sindias">'+(r && r.error === "uno_mismo"
+              ? "No puedes borrarte a ti misma." : "No se pudo borrar.")+'</div>');
+        });
+    }
+  });
+
+  document.getElementById("usrGuardar").addEventListener("click", function(){
+    const login  = document.getElementById("usrLogin").value.trim().toLowerCase();
+    const nombre = document.getElementById("usrNombre").value.trim();
+    const nueva  = document.getElementById("usrClave").value;
+    const r      = document.getElementById("usrRol").value;
+    if(!/^[a-z0-9._-]{3,20}$/.test(login)){
+      usrAviso.textContent = "El usuario va sin espacios ni acentos, de 3 a 20 letras."; return;
+    }
+    if(!nombre){ usrAviso.textContent = "Escribe el nombre de la persona."; return; }
+    if(!usrEditando && nueva.length < 6){ usrAviso.textContent = "La contraseña necesita 6 caracteres o más."; return; }
+    usrAviso.textContent = "Guardando…";
+    sbRpc("usuario_guardar", {p_usuario: usuario, p_clave: clave, u_usuario: login,
+                              u_nombre: nombre, u_nueva_clave: nueva, u_rol: r, u_activo: true})
+      .then(function(res){
+        if(res && res.ok){ usrCerrarForm(); cargarUsuarios(); return; }
+        const e = res && res.error;
+        usrAviso.textContent = e === "permiso" ? "Necesitas ser administrador."
+                             : e === "clave_corta" ? "La contraseña necesita 6 caracteres o más."
+                             : e === "usuario_invalido" ? "Usuario inválido."
+                             : "No se pudo guardar.";
+      }).catch(function(){ usrAviso.textContent = "No se pudo conectar."; });
+  });
 
   /* ================= historial ================= */
   const panelh = document.getElementById("panelh"), listaH = document.getElementById("listaH"),
